@@ -1,4 +1,4 @@
-# Exlainer: Sanitizer
+# Explainer: Sanitizer
 
 ## Problems & Goals
 
