@@ -12,11 +12,11 @@ were evolving, and browsers were slow to update, and hence the additional
 flexibility of a regular JavaScript library was likely the superior choice.
 Today, the risks and methods of web attacks are better understood; browsers
 are updated frequently, [oftentimes more frequently than many web apps update
-their dependencies](cloudflare-js-deps-study); and -- in addition to many, many
-successes -- the [limits of building secure JavaScript libraries](dompurify-comment)
+their dependencies][cloudflare-js-deps-study]; and -- in addition to many, many
+successes -- the [limits of building secure JavaScript libraries][dompurify-comment]
 have also become more apparent.
 
-[clouflare-js-deps-study]: https://blog.cloudflare.com/javascript-libraries-are-almost-never-updated/
+[cloudflare-js-deps-study]: https://blog.cloudflare.com/javascript-libraries-are-almost-never-updated/
 [dompurify-comment]: https://www.usenix.org/sites/default/files/conference/protected-files/enigma16_slides_heiderich.pdf
 
 In particular, the JavaScript language provides numerous ways for scripts to
@@ -70,7 +70,7 @@ other enforcement mechanisms.
 ## Proposal
 
 The basic proposal is to develop an API that learns from the
-[DOMPurify](dompurify) library. In particular:
+[DOMPurify][dompurify] library. In particular:
 
 [dompurify]: https://github.com/cure53/DOMPurify
 
@@ -102,7 +102,7 @@ The basic API would be two calls: `.saneStringFrom(value)` to produce a string,
 and `.saneFragmentFrom(value)` to produce a DocumentFragment. Sanitizers can
 be constructed with a dictionary of options.
 
-```
+```js
 [Constructor(dictionary options)] interface Sanitizer {
   DOMString saneStringFrom(DOMstring);
   DocumentFragment saneFragmentFrom([StringContext=HTML] DOMString);
@@ -118,7 +118,7 @@ where they do not have special requirements.
 then we'd need to add additional configuration options, because some of these
 can't be created using the currently proposed options.]*
 
-```
+```js
 interface DefaultSanitizers {
   readonly Sanitizer string_only;  // string, without any elements
   readonly Sanitizer simple;  // HTML element content with known-good elements allowed
@@ -130,7 +130,7 @@ interface DefaultSanitizers {
 A simple web app wishes to take a string (say: a name) and display it on
 the page:
 
-```
+```js
 document.getElementById("...").textContent = sanitizers.html.saneStringFrom(user_supplied_value);
 ```
 
@@ -138,7 +138,7 @@ The default sanitizers should probably be accessible via the document, or
 somesuch. For this example we'll just pretend they're in the global namespace,
 which... they wouldn't be.
 
-```
+```js
 string_only.saneStringFrom("a simple example") => "a simple example"
 string_only.saneStringFrom("<b>bold</b> text") => "bold text"
 simple.saneStringFrom("<b>bold</b> text") => "<b>bold</b> text"
@@ -147,8 +147,8 @@ simple.saneStringFrom("<b>bold</b><script>alert(4)</script> text") => "<b>bold</
 
 ### Proposed Options
 
-*[I'm super unsure here. DOMPurify is (rather
-full-featured)[dompurify-features], but I take it each feature in there has
+*[I'm super unsure here. DOMPurify is [rather
+full-featured][dompurify-features], but I take it each feature in there has
 found its use case. I suspect we should approach the same feature set, but
 take liberties to reduce it if a use case is unclear. The important part
 IMHO is to structure the API so that adding options will be easy, which is
@@ -157,12 +157,12 @@ well covered by the "options dictionary".]*
 [dompurify-features]: https://github.com/cure53/DOMPurify/tree/master/demos#what-is-this
 
 * Element tags (& attributes)
-   * allowed tags  (example: ['b', 'em', 'a']
-   * allowed attrs  (example: ['href'])
+   * allowed tags  (example: `['b', 'em', 'a']`)
+   * allowed attrs  (example: `['href']`)
 * URIs
-   * allowed protocols (example: ['https'])
-   * allowed origins  (example: ['https://www.example/', 'https://other.example:8888/']
-   * allow regexp (example: '(https|http)://.*\.example/sample/path/.*')
+   * allowed protocols (example: `['https']`)
+   * allowed origins  (example: `['https://www.example/', 'https://other.example:8888/']`)
+   * allow regexp (example: `['(https|http)://.*\.example/sample/path/.*']`)
 
 ### Open questions / Options / Extensions
 
@@ -171,10 +171,10 @@ This is a list of alternative options that should be considered:
 * Should there be additional options about what the string-to-be-sanitized is
   used for?
 
-  * DOMPurify has a options (e.g. WHOLE_DOCUMENT, FORCE_BODY) that specify more
+  * DOMPurify has a options (e.g. `WHOLE_DOCUMENT`, `FORCE_BODY`) that specify more
     about the expected output that this proposal does.
 
-* Should URIs be first class citizens in this proposal? (E.g. .saneURIFrom(.))
+* Should URIs be first class citizens in this proposal? (E.g. `.saneURIFrom(.)`)
 
   * We already have options to restrict URIs, but presently there's no way to
     sanitize a URI by itself.
@@ -184,7 +184,7 @@ This is a list of alternative options that should be considered:
   certain attribute on one element but not on another?
 
 * URI options, specifically URI allow regexp: There is a (currently
-  unimplemented) proposal for a [URLPattern primitive)[urlpattern]. This might
+  unimplemented) proposal for a [`URLPattern` primitive][urlpattern]. This might
   be a better way to specify allowed URIs than what is proposed above.
 
 [urlpattern]: https://github.com/wanderview/service-worker-scope-pattern-matching/blob/master/explainer.md
@@ -248,60 +248,60 @@ General API differences:
 
 * This has a more limited set of options.
 
-* There is presently no equivalent to [hooks](dompurify-hooks).
+* There is presently no equivalent to [hooks][dompurify-hooks].
 
 [dompurify-hooks]: https://github.com/cure53/DOMPurify#hooks
 
-List of DOMPurify options: (options collected [here](dompurify-options-1) and
-[here](dompurify-options-2))
+List of DOMPurify options: (options collected [here][dompurify-options-1] and
+[here][dompurify-options-2])
 
 [dompurify-options-1]: https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 [dompurify-options-2]: https://github.com/cure53/DOMPurify/blob/master/src/purify.js
 
 * Specify return value type: (Might also influence allowed tags):
-   * RETURN_DOM  // returns HTMLBodyElement
-   * RETURN_DOM_FRAGMENT  // returns  DocumentFragment
-   * RETURN_DOM_IMPORT  // modifier to RETURN_DOM_FRAGMENT
-   * RETURN_TRUSTED_TYPE  // return TrustedHTML
+   * `RETURN_DOM  // returns HTMLBodyElement`
+   * `RETURN_DOM_FRAGMENT  // returns  DocumentFragment`
+   * `RETURN_DOM_IMPORT  // modifier to RETURN_DOM_FRAGMENT`
+   * `RETURN_TRUSTED_TYPE  // return TrustedHTML`
 * Limit/extend which content is allowed:
-   * ALLOWED_TAGS
-   * ALLOWED_ATTR
-   * FORBID_TAGS
-   * FORBID_ATTR
-   * ADD_TAGS
-   * ADD_ATTR
-   * ALLOW_DATA_ATTR
-   * ALLOW_UNKNOWN_PROTOCOLS
-   * ALLOWED_URI_REGEXP
-   * ADD_URI_SAFE_ATTR
-   * ALLOW_ARIA_ATTR
-   * SAFE_FOR_TEMPLATES  // strip common template markers (like <%..%>)
-   * SAFE_FOR_JQUERY
+   * `ALLOWED_TAGS`
+   * `ALLOWED_ATTR`
+   * `FORBID_TAGS`
+   * `FORBID_ATTR`
+   * `ADD_TAGS`
+   * `ADD_ATTR`
+   * `ALLOW_DATA_ATTR`
+   * `ALLOW_UNKNOWN_PROTOCOLS`
+   * `ALLOWED_URI_REGEXP`
+   * `ADD_URI_SAFE_ATTR`
+   * `ALLOW_ARIA_ATTR`
+   * `SAFE_FOR_TEMPLATES  // strip common template markers (like <%..%>)`
+   * `SAFE_FOR_JQUERY`
 * Profile options, that enable several options at once:
-   * USE_PROFILES  // predefined sets of ALLOWED_TAGS
+   * `USE_PROFILES  // predefined sets of ALLOWED_TAGS`
 * Miscellaneous::
-   * WHOLE_DOCUMENT
-   * SANITIZE_DOM
-   * FORCE_BODY
-   * KEEP_CONTENT
-   * IN_PLACE
+   * `WHOLE_DOCUMENT`
+   * `SANITIZE_DOM`
+   * `FORCE_BODY`
+   * `KEEP_CONTENT`
+   * `IN_PLACE`
 
 DOMPurify hooks: (without equivalent in this proposal)
-* beforeSanitizeElements
-* uponSanitizeElement (No 's' - called for every element)
-* afterSanitizeElements
-* beforeSanitizeAttributes
-* uponSanitizeAttribute
-* afterSanitizeAttributes
-* beforeSanitizeShadowDOM
-* uponSanitizeShadowNode
-* afterSanitizeShadowDOM
+* `beforeSanitizeElements`
+* `uponSanitizeElement  // No 's' - called for every element`
+* `afterSanitizeElements`
+* `beforeSanitizeAttributes`
+* `uponSanitizeAttribute`
+* `afterSanitizeAttributes`
+* `beforeSanitizeShadowDOM`
+* `uponSanitizeShadowNode`
+* `afterSanitizeShadowDOM`
 
 
 ## Appendix: Interaction with Trusted Types
 
 It's the goal of the specification that the sanitizers can be used
-independently, without requiring an additional API. Trusted Types can be
+independently, without requiring an additional API. [Trusted Types][trusted-types] can be
 used as an enforcement mechanism, but doesn't provide sanitization
 functionality. These two should work well together, but should not depend on
 each other.
@@ -319,4 +319,4 @@ programs. If one were to change this API to be geared primarily towards
 Trusted Types, one would presumably drop the `.saneFragmentFrom(.)` method
 entirely.
 
-
+[trusted-types]: https://w3c.github.io/webappsec-trusted-types/dist/spec/
